@@ -3,8 +3,11 @@
 An KRM Function to render go templated manifests. 
 
 - [KRM Fn specification](https://github.com/kubernetes-sigs/kustomize/blob/master/cmd/config/docs/api-conventions/functions-spec.md)
-- [gomplate](https://gomplate.ca/) is used to render templates
 - [go-getter](https://github.com/hashicorp/go-getter) is used to fetch sources
+- gotpl + sprig rendering
+
+TODO:
+- render engine [gomplate](https://gomplate.ca/) is used to render templates
 
 ```sh
 # build

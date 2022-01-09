@@ -28,13 +28,13 @@ import (
 )
 
 var DefaultResource = RemoteResource{
-	Name:            "",
-	Repo:            "",
-	RepoCreds:       "",
-	Update:          false,
-	Template:        "",
-	TemplatePattern: "*.t*pl",
-	TemplateOpts:    "",
+	Name:         "",
+	Repo:         "",
+	RepoCreds:    "",
+	Update:       false,
+	Template:     "",
+	TemplateGlob: "*.t*pl",
+	//TemplateOpts:    "",
 	Kinds:           []string{"!namespace"},
 	FlattenValuesBy: "_",
 	destDir:         "",
@@ -43,7 +43,6 @@ var DefaultResource = RemoteResource{
 // RenderPlugin is a plugin to generate k8s resources
 // from a remote or local go templates.
 type RenderPlugin struct {
-	//types.GotplInflatorArgs
 	PluginConfig
 
 	sourcesDir string
@@ -63,9 +62,9 @@ type RemoteResource struct {
 	// whether to update existing source
 	Update bool `json:"update,omitempty" yaml:"update,omitempty"`
 	// template
-	Template        string `json:"template,omitempty" yaml:"template,omitempty"`
-	TemplatePattern string `json:"templateGlob,omitempty" yaml:"templateGlob,omitempty"`
-	TemplateOpts    string `json:"templateOpts,omitempty" yaml:"templateOpts,omitempty"`
+	Template     string `json:"template,omitempty" yaml:"template,omitempty"`
+	TemplateGlob string `json:"templateGlob,omitempty" yaml:"templateGlob,omitempty"`
+	//TemplateOpts string `json:"templateOpts,omitempty" yaml:"templateOpts,omitempty"` // PLACEHOLDER
 	// kinds
 	Kinds []string `json:"kinds,omitempty" yaml:"kinds,omitempty"`
 
@@ -189,15 +188,18 @@ func (p *RenderPlugin) EvalSources() (err error) {
 func (p *RenderPlugin) FetchSources() (err error) {
 	for _, rs := range p.Sources {
 
-		// ensure fetch destination (ie: <soucesDir>/reponame-branch)
-		if _, err := os.Stat(rs.destDir); os.IsNotExist(err) {
-			_ = os.MkdirAll(rs.destDir, 0770)
-		}
+		// ensure fetch destination (ie: <sourcesDir>/<sourceName>)
+		// if _, err := os.Stat(rs.destDir); os.IsNotExist(err) {
+		// 	_ = os.MkdirAll(rs.destDir, 0770)
+		// }
 
-		// skip fetch if is present and not forced
-		updateSource, _ := strconv.ParseBool(os.Getenv("UPDATE_SOURCE"))
+		// skip if update is not requested
+		updateSource, err := strconv.ParseBool(os.Getenv("UPDATE_SOURCE"))
+		if err != nil {
+			updateSource = false
+		}
 		_, err = os.Stat(rs.destDir)
-		if err == nil && (!rs.Update || !updateSource) {
+		if !os.IsNotExist(err) && (!rs.Update || !updateSource) {
 			continue
 		}
 
@@ -234,19 +236,17 @@ func (p *RenderPlugin) FetchSources() (err error) {
 }
 
 // RenderSources render gotpl manifests
-func (p *RenderPlugin) RenderSources() (resmap.ResMap, error) {
+func (p *RenderPlugin) RenderSources() (resMap resmap.ResMap, err error) {
 	var out bytes.Buffer
-	//resMap := resmap.New()
-	var resMap resmap.ResMap
+	resMap = resmap.New()
 	for _, rs := range p.Sources {
 
-		var tplPattern string
-		if rs.TemplatePattern != "" {
-			tplPattern = DefaultResource.TemplatePattern
+		if rs.TemplateGlob == "" {
+			rs.TemplateGlob = DefaultResource.TemplateGlob
 		}
 
 		// find templates
-		templates, err := TemplateFinder(rs.destDir, tplPattern)
+		templates, err := TemplateFinder(rs.destDir, rs.TemplateGlob)
 		if os.IsNotExist(err) {
 			continue
 		} else if err != nil {
@@ -254,7 +254,7 @@ func (p *RenderPlugin) RenderSources() (resmap.ResMap, error) {
 		}
 
 		// actual render
-		// TODO, FIXME, replace with gomplate
+		// TODO, add render engine gomplate
 		for _, t := range templates {
 			out.WriteString("\n---\n")
 			err := p.GotplRenderBuf(t, &out)
@@ -263,24 +263,26 @@ func (p *RenderPlugin) RenderSources() (resmap.ResMap, error) {
 			}
 		}
 
+		// convert to resMap (bytes)
 		resMapSrc, err := p.rf.NewResMapFromBytes(out.Bytes())
 		if err != nil {
 			return nil, err
 		}
 
+		// filter kinds
 		if len(rs.Kinds) == 0 {
 			rs.Kinds = DefaultResource.Kinds
 		}
-		// err = p.FilterKinds(rs.Kinds, resMapSrc)
-		// if err != nil {
-		// 	return nil, fmt.Errorf("failed to filter kinds %s for source %s", strings.Join(rs.Kinds, ","), rs.Name)
-		// }
+		err = p.FilterKinds(rs.Kinds, resMapSrc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to filter kinds %s for source %s", strings.Join(rs.Kinds, ","), rs.Name)
+		}
 
-		resMap = resMapSrc
-		// err = resMap.AppendAll(resMapSrc)
-		// if err != nil {
-		// 	return nil, err
-		// }
+		// append single source to output
+		err = resMap.AppendAll(resMapSrc)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// convert to kyaml resource map
@@ -326,7 +328,7 @@ func (p *RenderPlugin) FilterKinds(kinds []string, rm resmap.ResMap) error {
 	//var kindsLcs []string
 	//return fmt.Errorf("FilterKinds, Not Implemented")
 
-	// per kinds item in soruces config
+	// per kinds item in soruce config
 	// - !namespace,secrets    # to remove
 	// - Deployment,ConfigMap  # only to keep, no glob
 	for _, kindsItem := range kinds {

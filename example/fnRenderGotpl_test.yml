@@ -10,11 +10,12 @@ metadata:
 sources:
 - name: example
   repo: git::https://github.com/epcim/k8s-kustomize-apps//example/manifests?ref=main
-  #update: false
+  #update: yes
   #templateGlob: "*.t*pl"
+  #templateOpts:
   kinds:
-  - "!namespace"
-  - ConfigMap,Deployment
+  - "!service"
+  - ConfigMap,Namespace
 values:
   nginx_cpu_request: "512m"
   nginx:
