@@ -1,7 +1,5 @@
 package main
 
-// FIXME ^^ it might be indepentent pkg
-
 import (
 	"bytes"
 	"context"
@@ -65,6 +63,7 @@ type RemoteResource struct {
 	Template     string `json:"template,omitempty" yaml:"template,omitempty"`
 	TemplateGlob string `json:"templateGlob,omitempty" yaml:"templateGlob,omitempty"`
 	//TemplateOpts string `json:"templateOpts,omitempty" yaml:"templateOpts,omitempty"` // PLACEHOLDER
+
 	// kinds
 	Kinds []string `json:"kinds,omitempty" yaml:"kinds,omitempty"`
 
@@ -82,6 +81,7 @@ type PluginConfig struct {
 	Values  map[string]interface{} `json:"values,omitempty" yaml:"values,omitempty"`
 }
 
+// Custom functions for Gotpl engine
 var SprigCustomFuncs = map[string]interface{}{
 	// legacy dependency
 	"handleEnvVars": func(rawEnvs interface{}) map[string]string {
@@ -139,11 +139,6 @@ func (p *RenderPlugin) Generate() (resMap resmap.ResMap, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create sources dir: %w", err)
 	}
-
-	//DEBUG
-	// for k, v := range p.Values {
-	// 	fmt.Printf("#%s:%s\n", k, v)
-	// }
 
 	// update,validate source spec
 	err = p.EvalSources()
