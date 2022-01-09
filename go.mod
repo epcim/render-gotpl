@@ -1,4 +1,6 @@
-module github.com/GoogleContainerTools/kpt-functions-catalog/functions/go/render-gotpl
+module github.com/epcim/render-gotpl
+
+//module github.com/GoogleContainerTools/kpt-functions-catalog/functions/go/render-gotpl
 
 go 1.17
 

@@ -9,11 +9,12 @@ metadata:
         image: render-gotpl
 sources:
 - name: example
-  repo: git::https://github.com/epcim/k8s-kustomize-apps.git?ref=main
-  #path: example/manifests
-  #pull: Always
+  repo: git::https://github.com/epcim/k8s-kustomize-apps//example/manifests?ref=main
+  #update: yes
   #templateGlob:   "*.t*pl"
-  #templateOpts    # PLACEHOLDER
+  #templateOpts:
+  kinds:
+  - "service"
 values:
   nginx_cpu_request: "512m"
   nginx:
