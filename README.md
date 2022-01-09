@@ -1,8 +1,19 @@
 # render-gotpl
 
+An KRM Function to render go templated manifests. 
+
+- [KRM Fn specification](https://github.com/kubernetes-sigs/kustomize/blob/master/cmd/config/docs/api-conventions/functions-spec.md)
+- [gomplate](https://gomplate.ca/) is used to render templates
+- [go-getter](https://github.com/hashicorp/go-getter) is used to fetch sources
 
 ```sh
+# build
+docker build -t render-gotpl . 
 
-docker build -t render-gotpl .
+# usage
+kustomize build --enable-alpha-plugins --network ./example 
+
+# dev
+kustomize build --enable-alpha-plugins --network example --mount "type=bind,rw=true,src=$PWD/tmp,dst=/tmp"
 ```
 
