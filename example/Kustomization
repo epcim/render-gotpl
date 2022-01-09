@@ -1,0 +1,6 @@
+
+namespace: &ns media
+
+generators:
+- ./fnRenderGotpl.yml
+

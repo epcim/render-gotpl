@@ -1,0 +1,27 @@
+apiVersion: fn.kpt.dev/v1
+kind: RenderGotpl
+metadata:
+  name: render
+  annotations:
+    config.kubernetes.io/function: |
+      container:
+        network: true
+        image: render-gotpl
+sources:
+- name: example
+  repo: git::https://github.com/epcim/k8s-kustomize-apps.git?ref=main
+  #path: example/manifests
+  #pull: Always
+  #templateGlob:   "*.t*pl"
+  #templateOpts    # PLACEHOLDER
+values:
+  nginx_cpu_request: "512m"
+  nginx:
+    cpu:
+      limit:  "1000m"
+    memory:
+      limit:  "1024M"
+
+
+
+
