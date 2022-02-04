@@ -215,7 +215,7 @@ func (p *RenderPlugin) FetchSources() (err error) {
 
 		client := &getter.Client{
 			Ctx:     context.TODO(),
-			Src:     rs.Repo + gettercreds,
+			Src:     fmt.Sprintf("%s%s", rs.Repo, gettercreds),
 			Dst:     rs.destDir,
 			Pwd:     pwd,
 			Mode:    getter.ClientModeAny,
@@ -441,7 +441,7 @@ func getRepoCreds(repoCreds string) (string, error) {
 				if err != nil {
 					return cr, err
 				}
-				keyb64 := base64.StdEncoding.EncodeToString([]byte(strings.TrimSpace(string(key))))
+				keyb64 := base64.StdEncoding.EncodeToString([]byte(key))
 				cr = fmt.Sprintf("%s?sshkey=%s", cr, string(keyb64))
 			}
 		}
