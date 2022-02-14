@@ -10,12 +10,13 @@ import (
 	"testing"
 	"sigs.k8s.io/kustomize/kyaml/fn/framework"
   "sigs.k8s.io/kustomize/kyaml/yaml"
+
 )
 
 var defaultResourceList = framework.ResourceList{
-  Items []*yaml.RNode{}
-  FunctionConfig *yaml.RNode{}
-  Results framework.Results{}
+  //Items []*yaml.RNode{}
+  FunctionConfig *yaml.RNode{},
+  Results framework.Results{},
 }
 
 func testRenderFunction(config *yaml.RNode) (string, error) {
@@ -42,7 +43,7 @@ func TestRenderPlugin(t *testing.T) {
 		config yaml.RNode
 		output string
 	}{
-		{ 
+		{
       name := "default"
       config :=  yaml.ReadFile("./example/fnRenderGotpl_test.yml")
       output :=`
