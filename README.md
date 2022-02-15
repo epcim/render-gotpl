@@ -1,14 +1,17 @@
 # render-gotpl
 
 An KRM Function to render go templated manifests.
+An generator to be used with Kubectl, Kustomize or Kpt...
 
-- [KRM Fn specification](https://github.com/kubernetes-sigs/kustomize/blob/master/cmd/config/docs/api-conventions/functions-spec.md)
-- [go-getter](https://github.com/hashicorp/go-getter) is used to fetch sources
-- gotpl + sprig rendering
+FEATURES:
+- [go-getter](https://github.com/hashicorp/go-getter) interface fetch dependencies
+- render gotpl templates with sprig library and custom functions
 
 TODO:
 - render engine [gomplate](https://gomplate.ca/) is used to render templates
+- independent pkg to fetch `sources`
 
+## Usage
 ```sh
 # build
 docker build -t render-gotpl .
@@ -27,11 +30,18 @@ kustomize build --enable-alpha-plugins --network --mount type=bind,src="$PWD/.re
 kustomize build --stack-trace --enable-alpha-plugins --network example --mount "type=bind,rw=true,src=$PWD/output,dst=/r/output"
 ```
 
+## Function
+
+[KRM Fn specification](https://github.com/kubernetes-sigs/kustomize/blob/master/cmd/config/docs/api-conventions/functions-spec.md)
+
+See upstream/other function examples:
+- https://github.com/GoogleContainerTools/kpt-functions-catalog/blob/master/functions
+
 
 ## Render engine
 
-- GotplRender
-- ~Gomplate~ (Will fork later for independent Fn)
+- GotplRender (internal)
+- ~Gomplate~ (3rd party, might fork project later for as independent Fn)
 
 
 ## Values
@@ -44,6 +54,8 @@ values:
       limit:  "1000m"
     memory:
       limit:  "1024M"
+  some:
+  - list
 ```
 
 GotplRender will either flatten all nested keys, so `nginx_memory_limit: 1024` can be used in templates.
