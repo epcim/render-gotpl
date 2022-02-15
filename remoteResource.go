@@ -30,7 +30,7 @@ type RemoteResource struct {
 	Kinds []string `json:"kinds,omitempty" yaml:"kinds,omitempty"`
 
 	//Values are flattened to single level, default: `_` delimited: .server_port: 111
-	FlattenValuesBy string `json:"flattenValuesBy,omitempty" yaml:"flattenValuesBy,omitempty`
+	FlattenValuesBy string `json:"flattenValuesBy,omitempty" yaml:"flattenValuesBy,omitempty"`
 
 	// destDir is where the resource is cloned
 	destDir string

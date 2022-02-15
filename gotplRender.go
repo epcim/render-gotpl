@@ -24,6 +24,8 @@ import (
 	getter "github.com/hashicorp/go-getter"
 	"github.com/pkg/errors"
 	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
+
+	"github.com/k0kubun/pp"
 )
 
 const recursionMaxNums = 1000
@@ -316,7 +318,7 @@ func (p *GotplRender) GotplRenderBuf(t string, out *bytes.Buffer) error {
 	//render
 	err = tpl.Execute(out, p.Values)
 	if err != nil {
-		log.Printf("Failed to render template %s, with context: %v\n", filepath.Base(t), p.Values)
+		log.Printf("Failed to render template %s, with context: %s\n", filepath.Base(t), pp.Sprint(p.Values))
 		return err
 	}
 	return nil
@@ -433,6 +435,8 @@ func FlattenMap(prefix string, src map[string]interface{}, dest map[string]inter
 		switch child := v.(type) {
 		case map[string]interface{}:
 			FlattenMap(prefix+k, child, dest)
+		case []interface{}:
+			dest[k] = v
 		default:
 			dest[k] = fmt.Sprintf("%v", v)
 		}
@@ -493,4 +497,9 @@ func contextFuncs(t *template.Template) {
 	}
 
 	t.Funcs(funcMap)
+}
+
+func dump(data interface{}){
+    b,_:=json.MarshalIndent(data, "", "  ")
+    fmt.Print(string(b))
 }
