@@ -4,11 +4,11 @@ An KRM Function to render go templated manifests.
 An generator to be used with Kubectl, Kustomize or Kpt...
 
 FEATURES:
-- [go-getter](https://github.com/hashicorp/go-getter) interface fetch dependencies
-- render gotpl templates with sprig library and custom functions
+- [go-getter](https://github.com/hashicorp/go-getter) interface to fetch dependencies
+- render gotpl templates with [sprig library](https://github.com/Masterminds/sprig) and custom functions
 
 TODO:
-- render engine [gomplate](https://gomplate.ca/) is used to render templates
+- add render engine [gomplate](https://gomplate.ca/)
 - independent pkg to fetch `sources`
 
 ## Usage
@@ -27,8 +27,11 @@ kustomize build --enable-alpha-plugins --network --mount type=bind,src="$PWD/.re
 
 # dev
 # see dockerfile for ENV variables
-kustomize build --stack-trace --enable-alpha-plugins --network example --mount "type=bind,rw=true,src=$PWD/output,dst=/r/output"
+kustomize build --stack-trace --enable-alpha-plugins --network example --mount "type=bind,rw=true,src=$PWD/.output,dst=/r/output"
 ```
+
+Check this [Makefile](https://github.com/epcim/gitops-infra/blob/master/Makefile) and repo that wrap kustomize ans provide simple CLI to render,build,apply,diff. 
+(I use this for bootstrap before proper CI/CD is in place. Hopefully Kustomize, KRM Fn will get better support in CD tools soon.)
 
 ## Function
 
@@ -36,12 +39,13 @@ kustomize build --stack-trace --enable-alpha-plugins --network example --mount "
 
 See upstream/other function examples:
 - https://github.com/GoogleContainerTools/kpt-functions-catalog/blob/master/functions
+- https://github.com/epcim/render-jsonnet-fn
 
 
-## Render engine
+## Rendering
 
 - GotplRender (internal)
-- ~Gomplate~ (3rd party, might fork project later for as independent Fn)
+- ~Gomplate~ (3rd party with external source support and tons of features)
 
 
 ## Values
@@ -97,3 +101,4 @@ sources:
   repo: git@gitlab.com:xxx/yyyy/cicd-deployment//minio/k8s?ref=master
   repoCreds: sshkey=/tmp/id_rsa
 ```
+
