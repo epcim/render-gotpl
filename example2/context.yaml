@@ -1,0 +1,22 @@
+
+prometheus:
+  dev: 0
+  cluster_name: databricks
+  site_name: databricks
+  retention: 6h
+  replicas: 1
+  namespace: databricks
+  workload_flavor: "large"
+  remote_write_endpoint: http://cortex.gc01.cluster.local
+  alertmanager_endpoint: alertmanager.gc01.cluster.local
+  environment: test
+  app_name: prom
+  host_network: false
+  aws_ec2_access_key: NONE
+  aws_ec2_secret_key: NONE
+  image: prometheus
+  external_url: xyz.prom.local
+  memory_requests:
+  disk_requests:
+  memory_limits:
+  disk_limits:

@@ -1,0 +1,185 @@
+apiVersion: v1
+data:
+  prometheus.yaml: |
+
+    global:
+      scrape_interval: 60s
+      scrape_timeout: 30s
+      evaluation_interval: 60s
+      {{- if or (.prometheus.cluster_name) (.prometheus.site_name) }}
+      external_labels:
+        {{- if .prometheus.cluster_name }}
+        cluster_name: {{ .prometheus.cluster_name }}
+        {{- end }}
+        {{- if .prometheus.site_name }}
+        site: {{ .prometheus.site_name }}
+        {{- end }}
+      {{- end }}
+
+    rule_files:
+    - "/etc/prometheus/rules/*.yml"
+
+    remote_write:
+    - url: "http://{{ .prometheus.remote_write_endpoint }}/api/prom/push"
+      write_relabel_configs:
+      - source_labels: [env]
+        action: keep
+        regex: {{ default "prod" .prometheus.environment }}
+
+    scrape_configs:
+    - job_name: 'prometheus'
+      static_configs:
+      - targets:
+        - localhost:9090
+        labels:
+          env: {{ default "prod" .prometheus.environment }}
+    - job_name: 'getafix'
+      file_sd_configs:
+      - files:
+        - '/etc/prometheus-sd/targets.json'
+kind: ConfigMap
+metadata:
+  name: {{ default "prometheus" .prometheus.app_name }}-core
+  namespace: {{ default "monitoring" .prometheus.namespace }}
+
+---
+
+{{- $app_name := default "prometheus" .prometheus.app_name }}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $app_name }}
+  namespace: {{ if .prometheus.namespace }}{{ .prometheus.namespace }}{{ else }}monitoring{{ end }}
+  labels:
+    app: prometheus
+    component: core
+spec:
+  selector:
+    matchLabels:
+      app: {{ $app_name }}
+  replicas: {{ default "1" .prometheus.replicas }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      name: prometheus
+      labels:
+        app: {{ $app_name }}
+      annotations:
+        prometheus.io/scrape: "pod"
+        prometheus.io/port: "9090"
+    spec:
+      {{- if .prometheus.host_network }}
+      priorityClassName: {{ $app_name }}-priority
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      #serviceAccountName: {{ $app_name }}
+      containers:
+      - name: watch
+        image: prometheus-watch
+        imagePullPolicy: IfNotPresent
+        args: ["-v", "-t", "-p=/etc/prometheus/prometheus.yaml", "curl", "-X", "POST", "--fail", "-o", "-", "-sS", "http://localhost:9090/-/reload"]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        resources:
+          limits:
+            cpu: 10m
+            memory: 24Mi
+          requests:
+            cpu: 10m
+            memory: 24Mi
+      - name: sd
+        volumeMounts:
+        - name: sd-volume
+          mountPath: /etc/prometheus-sd
+        env:
+        - name: SD_FILE_PATH
+          value: /etc/prometheus-sd/targets.json
+        - name: TAG_ENV
+          value: {{ default "prod" .prometheus.environment }}
+        - name: AWS_ACCESS_KEY
+          value: {{ default "ACCESS_KEY" .prometheus.aws_ec2_access_key }}
+        - name: AWS_SECRET_KEY
+          value: {{ default "SECRET_KEY" .prometheus.aws_ec2_secret_key }}
+        image: databricks-aws-ec2-sd:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "/scripts/aws_ec2_sd.py"]
+        resources:
+          limits:
+            cpu: 10m
+            memory: 324Mi
+          requests:
+            cpu: 10m
+            memory: 204Mi
+      - name: prometheus
+        image: {{ if .prometheus.image }}{{ .prometheus.image }}{{ else }}prom/prometheus:{{ if .prometheus.version }}{{ .prometheus.version }}{{ else }}v2.18.1{{ end }}{{ end }}
+        args:
+          - --storage.tsdb.retention={{ if .prometheus.retention }}{{ .prometheus.retention }}{{ else }}{{ if .prometheus.federation }}6h{{ else }}1d{{ end }}{{ end }}
+          - --config.file=/etc/prometheus/prometheus.yaml
+          - --web.enable-lifecycle
+          {{- if .prometheus.external_url }}
+          - --web.external-url{{ .prometheus.external_url }}
+          {{- end }}
+          - --web.route-prefix=/
+        ports:
+        - name: webui
+          containerPort: 9090
+        readinessProbe:
+          httpGet:
+            path: "/-/ready"
+            port: webui
+        livenessProbe:
+          httpGet:
+            path: "/-/healthy"
+            port: webui
+          failureThreshold: 3
+          initialDelaySeconds: 300
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 10
+        resources:
+          requests:
+            memory: {{ default "2Gi" .prometheus.memory_requests }}
+            ephemeral-storage: {{ default "10Gi" .prometheus.disk_requests }}
+          limits:
+            memory: {{ default "8Gi" .prometheus.memory_limits }}
+            ephemeral-storage: {{ default "10Gi" .prometheus.disk_limits }}
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/prometheus
+        - name: sd-volume
+          mountPath: /etc/prometheus-sd
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ $app_name }}-core
+      - name: sd-volume
+        emptyDir:
+          medium: Memory
+          sizeLimit: "5M"
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ default "prometheus" .prometheus.app_name }}
+  namespace: {{ if .prometheus.namespace }}{{ .prometheus.namespace }}{{ else }}{{ if .namespace }}{{ .namespace }}{{ else }}prometheus{{ end }}{{ end }}
+  annotations:
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ default "prometheus" .prometheus.app_name }}
+  ports:
+    - protocol: TCP
+      port: 9090
+      targetPort: 9090
+
+# vim: syntax=yaml

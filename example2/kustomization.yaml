@@ -1,0 +1,15 @@
+namespace: databricks
+
+generators:
+- |-
+  apiVersion: v1
+  kind: krmFn
+  metadata:
+    name: local
+    annotations:
+      config.kubernetes.io/function: |
+        exec:
+          path: "gotplRenderFn.sh"
+  spec:
+    templates: ./manifests
+    context: ./context.yaml
