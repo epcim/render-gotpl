@@ -1,7 +1,6 @@
 #!/bin/bash
 
-## DRAFT
-## SH implementation of Gotpl render KRM Fn (this)
+## SH implementation of Gotpl render KRM Fn (this, draft)
 ## GO implementation of Gotpl render KRM Fn (https://github.com/epcim/render-gotpl-fn)
 
 # $1 - optional path to manifests
@@ -20,7 +19,7 @@ read -r -t 1 -d $'\0' resourceList
 TMPLPTH=${TMPLPTH:-$(echo "$resourceList" | yq e '.functionConfig.spec.templates' -)}
 CONTEXT=$(echo "$resourceList" | yq e '.functionConfig.spec.context' -)
 
-# fixtures, to allow ./renderGotplFn.sh exection without KRM engine
+# fixtures, to allow direct exection without KRM engine
 CONTEXT=${CONTEXT//null/$(dirname $TMPLPTH)\/..\/context.yaml}
 TMPLPTH=${TMPLPTH//null/$PWD\/manifests}
 

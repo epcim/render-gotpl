@@ -1,4 +1,4 @@
-namespace: databricks
+namespace: sre
 
 generators:
 - |-
@@ -9,7 +9,7 @@ generators:
     annotations:
       config.kubernetes.io/function: |
         exec:
-          path: "gotplRenderFn.sh"
+          path: "fnRenderGotpl.sh"
   spec:
     templates: ./manifests
     context: ./context.yaml
