@@ -13,6 +13,8 @@ kustomize build --enable-alpha-plugins --network --enable-exec --load-restrictor
 
 ## Usage: Go implementation
 
+DRAFT, working but needs cleanup/lint
+
 Features:
 - [go-getter](https://github.com/hashicorp/go-getter) interface to fetch dependencies
 - render gotpl templates with [sprig library](https://github.com/Masterminds/sprig) and custom functions
