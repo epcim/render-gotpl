@@ -3,32 +3,39 @@
 An KRM Function to render go templated manifests.
 An generator to be used with Kubectl, Kustomize or Kpt...
 
-FEATURES:
-- [go-getter](https://github.com/hashicorp/go-getter) interface fetch dependencies
-- render gotpl templates with sprig library and custom functions
+## Usage: Shell implementation
 
-TODO:
-- render engine [gomplate](https://gomplate.ca/) is used to render templates
-- independent pkg to fetch `sources`
+An prototype.
 
-## Usage
+```
+kustomize build --enable-alpha-plugins --network --enable-exec --load-restrictor LoadRestrictionsNone ./example-exec
+```
+
+## Usage: Go implementation
+
+Features:
+- [go-getter](https://github.com/hashicorp/go-getter) interface to fetch dependencies
+- render gotpl templates with [sprig library](https://github.com/Masterminds/sprig) and custom functions
+- can render non-helm git repositories, subpaths etc..
+- filter Kinds
+
+Build:
 ```sh
-# build
 docker build -t render-gotpl .
 
-# usage (public repos)
-kustomize build --enable-alpha-plugins --network ./example
-
-# usage (private repos, mount pre-fetched repositories)
-# sources:
-# - name: minio
-#   repo: /r/repos/cicd-deployment//minio/k8s
-kustomize build --enable-alpha-plugins --network --mount type=bind,src="$PWD/.repos",dst=/r/repos .
-
-# dev
-# see dockerfile for ENV variables
-kustomize build --stack-trace --enable-alpha-plugins --network example --mount "type=bind,rw=true,src=$PWD/output,dst=/r/output"
+go build .
 ```
+
+Kustomize usage:
+```
+kustomize build --enable-alpha-plugins --network ./example-container
+```
+
+In future `kubectl` versions:
+```
+kubectl -k apply ./example-exec
+```
+
 
 ## Function
 
@@ -37,11 +44,14 @@ kustomize build --stack-trace --enable-alpha-plugins --network example --mount "
 See upstream/other function examples:
 - https://github.com/GoogleContainerTools/kpt-functions-catalog/blob/master/functions
 
+My other functions:
+- https://github.com/epcim/render-jsonnet-fn
 
-## Render engine
-
-- GotplRender (internal)
-- ~Gomplate~ (3rd party, might fork project later for as independent Fn)
+Notable to mention:
+- helm render function:
+  - https://github.com/GoogleContainerTools/kpt-functions-catalog/tree/master/functions/go/render-helm-chart
+  - https://github.com/GoogleContainerTools/kpt-functions-catalog/tree/master/examples/render-helm-chart-kustomize-private-git
+  - https://github.com/GoogleContainerTools/kpt-functions-catalog/tree/master/examples/render-helm-chart-kustomize-inline-values
 
 
 ## Values
@@ -74,9 +84,28 @@ See go-getter documentation for more details: https://github.com/hashicorp/go-ge
 
 ### Private repos
 
-DRAFT, not working yet, waiting for some best practice from upstream.
+WORKAROUND than solution, waiting for some best practice from upstream.
 Current interface to function does not allow to easily do such thing.
 
+See this either: [render-helm-chart-kustomize-private-git](https://github.com/GoogleContainerTools/kpt-functions-catalog/tree/master/examples/render-helm-chart-kustomize-private-git)
+
+
+Works:
+```
+# usage (private repos, mount pre-fetched repositories)
+sources:
+- name: minio
+  repo: /r/repos/cicd-deployment//minio/k8s
+
+# then:
+kustomize build --enable-alpha-plugins --network --mount type=bind,src="$PWD/.repos",dst=/r/repos .
+
+# dev
+# see dockerfile for ENV variables
+kustomize build --stack-trace --enable-alpha-plugins --network example --mount "type=bind,rw=true,src=$PWD/.output,dst=/r/output"
+```
+
+Not working:
 From private repository, with ssh key or token mounted.
 ```yaml
 apiVersion: fn.kpt.dev/v1
@@ -97,3 +126,4 @@ sources:
   repo: git@gitlab.com:xxx/yyyy/cicd-deployment//minio/k8s?ref=master
   repoCreds: sshkey=/tmp/id_rsa
 ```
+
