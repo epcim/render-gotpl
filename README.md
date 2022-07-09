@@ -8,7 +8,7 @@ An generator to be used with Kubectl, Kustomize or Kpt...
 An prototype.
 
 ```
-kustomize build --enable-alpha-plugins --network ./example-exec
+kustomize build --enable-alpha-plugins --network --enable-exec --load-restrictor LoadRestrictionsNone ./example-exec
 ```
 
 ## Usage: Go implementation
