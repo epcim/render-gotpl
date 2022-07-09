@@ -9,7 +9,7 @@ generators:
     annotations:
       config.kubernetes.io/function: |
         exec:
-          path: "fnRenderGotpl.sh"
+          path: "fnRenderGotpl"
   spec:
     templates: ./manifests
     context: ./context.yaml
